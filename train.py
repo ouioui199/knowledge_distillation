@@ -17,7 +17,6 @@ if __name__ == "__main__":
     parser = train_parser(parser)
     opt = parser.parse_args()
 
-    # Data loading and preprocessing
     transform = v2.Compose([
         # v2.GaussianBlur(kernel_size=(3, 3)),
         # v2.RandomAutocontrast(),
@@ -56,8 +55,7 @@ if __name__ == "__main__":
         pin_memory=True
     )
 
-    # Model training using PyTorch Lightning Trainer
-    model = SmallModel(opt)
+    model = KDModel(opt)
     trainer = L.Trainer(
         max_epochs=opt.epochs, 
         num_sanity_val_steps=0,
