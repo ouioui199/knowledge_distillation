@@ -1,0 +1,6 @@
+__pycache__
+.vscode
+data
+training_logs
+weights_storage
+*.ipynb
