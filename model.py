@@ -14,6 +14,8 @@ from torchmetrics.classification import Accuracy
 
 from torchvision.models import efficientnet_b0, squeezenet1_0, mobilenet_v3_small
 
+from segmentation_models_pytorch.losses import DiceLoss, FocalLoss
+
 
 class BaseModel(L.LightningModule, ABC):
     def __init__(self, opt: Namespace):
@@ -22,6 +24,8 @@ class BaseModel(L.LightningModule, ABC):
         self.lr = opt.start_lr
         
         self.ce_loss = CrossEntropyLoss()
+        self.dice_loss = DiceLoss(mode='multiclass', classes=10)
+        self.focal_loss = FocalLoss(mode='multiclass')
         self.accuracy = Accuracy(task='multiclass', num_classes=10)
 
     @abstractmethod
@@ -200,7 +204,7 @@ class SmallModel(BaseModel):
         images, labels = batch
         logits = self(images)
         
-        return {'loss': self.ce_loss(logits[0], labels), 'metrics': self.accuracy(logits[0], labels)}
+        return {'loss': self.dice_loss(logits[0], labels), 'metrics': self.accuracy(logits[0], labels)}
     
     def on_train_epoch_end(self):
         super().on_train_epoch_end()
@@ -210,7 +214,7 @@ class SmallModel(BaseModel):
         images, labels = batch
         logits = self(images)
         
-        return {'val_loss': self.ce_loss(logits[0], labels), 'metrics': self.accuracy(logits[0], labels)}
+        return {'val_loss': self.dice_loss(logits[0], labels), 'metrics': self.accuracy(logits[0], labels)}
         
     def on_validation_epoch_end(self):
         super().on_validation_epoch_end()
