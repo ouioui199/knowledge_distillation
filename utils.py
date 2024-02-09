@@ -15,7 +15,7 @@ class TBLogger(TensorBoardLogger):
     @rank_zero_only
     def log_metrics(self, metrics, step):
         metrics.pop('epoch', None)
-        metrics = {k: v for k, v in metrics.items() if ('step' not in k) and ('val' not in k)}
+        metrics = {k: v for k, v in metrics.items() if (('step' not in k) and ('val' not in k))}
         return super().log_metrics(metrics, step)
     
     
