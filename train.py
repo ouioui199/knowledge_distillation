@@ -28,7 +28,7 @@ if __name__ == "__main__":
         # v2.RandomPerspective(),
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        v2.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
         # v2.Normalize((0.1307,), (0.3081,))
     ])
 
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         pin_memory=True
     )
 
-    model = KDModel(opt)
+    model = SmallModel(opt)
     trainer = L.Trainer(
         max_epochs=opt.epochs, 
         num_sanity_val_steps=0,
