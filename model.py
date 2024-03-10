@@ -1,6 +1,7 @@
 from argparse import Namespace
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Dict, Union
 
 import lightning as L
 
@@ -29,16 +30,16 @@ class BaseModel(L.LightningModule, ABC):
         self.accuracy = Accuracy(task='multiclass', num_classes=10)
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         pass
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch: torch.Tensor, batch_idx: int):
         images, labels = batch
         logits = self(images)
         
         return {'loss': self.ce_loss(logits, labels), 'metrics': self.accuracy(logits, labels)}
     
-    def on_train_batch_end(self, outputs, batch, batch_idx) -> None:
+    def on_train_batch_end(self, outputs: Dict[str, torch.Tensor], batch: torch.Tensor, batch_idx: int) -> None:
         self.log('step_loss', outputs['loss'], prog_bar=True)
         self.log('step_metrics', outputs['metrics'])
         
@@ -51,7 +52,7 @@ class BaseModel(L.LightningModule, ABC):
             self.train_step_outputs['step_loss'].append(outputs['loss'])
             self.train_step_outputs['step_metrics'].append(outputs['metrics'])
     
-    def on_train_epoch_end(self):
+    def on_train_epoch_end(self) -> None:
         _log_dict = {
             'Loss/loss': torch.tensor(self.train_step_outputs['step_loss']).mean(),
             'Metrics/accuracy': torch.tensor(self.train_step_outputs['step_metrics']).mean()
@@ -59,13 +60,13 @@ class BaseModel(L.LightningModule, ABC):
         
         self.loggers[0].log_metrics(_log_dict, self.current_epoch)
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch: torch.Tensor, batch_idx: int):
         images, labels = batch
         logits = self(images)
         
         return {'val_loss': self.ce_loss(logits, labels), 'metrics': self.accuracy(logits, labels)}
     
-    def on_validation_batch_end(self, outputs, batch, batch_idx, dataloader_idx = 0) -> None:
+    def on_validation_batch_end(self, outputs: Dict[str, torch.Tensor], batch: torch.Tensor, batch_idx: int, dataloader_idx = 0) -> None:
         self.log('step_val_loss', outputs['val_loss'], prog_bar=True)
         self.log('step_val_metrics', outputs['metrics'])
         
@@ -92,7 +93,7 @@ class BaseModel(L.LightningModule, ABC):
         self.log('val_loss', mean_loss_value)
         self.log('val_Accuracy', mean_metrics_value)
 
-    def configure_optimizers(self):
+    def configure_optimizers(self) -> Dict[str, Union[torch.optim.Optimizer, torch.optim.lr_scheduler.LRScheduler]]:
         optimizer = Adam(params=self.parameters(), lr=self.lr)
         optim_dict = {'optimizer': optimizer}
         if self.opt.lr_plateau:
@@ -176,7 +177,7 @@ class SmallModel(BaseModel):
         self.initialize_network(self.model)
     
     @staticmethod
-    def initialize_network(module):
+    def initialize_network(module: nn.Module) -> None:
         for m in module.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_uniform_(m.weight, mode="fan_in", nonlinearity="relu")
