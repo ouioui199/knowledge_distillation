@@ -52,13 +52,12 @@ class BaseModel(L.LightningModule, ABC):
             self.train_step_outputs['step_metrics'].append(outputs['metrics'])
     
     def on_train_epoch_end(self):
-        tb_logger = self.loggers[0].experiment
+        _log_dict = {
+            'Loss/loss': torch.tensor(self.train_step_outputs['step_loss']).mean(),
+            'Metrics/accuracy': torch.tensor(self.train_step_outputs['step_metrics']).mean()
+        }
         
-        mean_loss_value = torch.tensor(self.train_step_outputs['step_loss']).mean()
-        mean_metrics_value = torch.tensor(self.train_step_outputs['step_metrics']).mean()
-        
-        tb_logger.add_scalar('Loss/loss', mean_loss_value, self.current_epoch)
-        tb_logger.add_scalar('Metrics/accuracy', mean_metrics_value, self.current_epoch)
+        self.loggers[0].log_metrics(_log_dict, self.current_epoch)
 
     def validation_step(self, batch, batch_idx):
         images, labels = batch
@@ -80,16 +79,18 @@ class BaseModel(L.LightningModule, ABC):
             self.valid_step_outputs['step_val_metrics'].append(outputs['metrics'])
     
     def on_validation_epoch_end(self) -> None:
-        tb_logger = self.loggers[1].experiment
-        
         mean_loss_value = torch.tensor(self.valid_step_outputs['step_val_loss']).mean()
         mean_metrics_value = torch.tensor(self.valid_step_outputs['step_val_metrics']).mean()
         
+        _log_dict = {
+            'Loss/loss': mean_loss_value,
+            'Metrics/accuracy': mean_metrics_value
+        }
+        
+        self.loggers[1].log_metrics(_log_dict, self.current_epoch)
+        
         self.log('val_loss', mean_loss_value)
         self.log('val_Accuracy', mean_metrics_value)
-        
-        tb_logger.add_scalar('Loss/loss', mean_loss_value, self.current_epoch)
-        tb_logger.add_scalar('Metrics/accuracy', mean_metrics_value, self.current_epoch)
 
     def configure_optimizers(self):
         optimizer = Adam(params=self.parameters(), lr=self.lr)
